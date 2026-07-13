@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.Collection;
@@ -21,6 +22,16 @@ public class UserController {
     public Collection<User> findAllUsers() {
         log.info("Добавлен новый пользователь. Всего пользователей {}", users.size());
         return users.values();
+    }
+
+    @GetMapping("/id")
+    public User findUserById(@PathVariable Long id) {
+        log.info("Запрос на получение пользователя по ID: {}", id);
+        if (!users.containsKey(id)) {
+            log.error("Пользователь не найден. id: {}", id);
+            throw new NotFoundException("Пользователь с ID " + id + " не найден");
+        }
+        return users.get(id);
     }
 
     @PostMapping
@@ -53,7 +64,7 @@ public class UserController {
         }
         if (!users.containsKey(newUser.getId())) {
             log.error("Пользователь не найден. id: {}", newUser.getId());
-            throw new ConditionsNotMetException("Пользователь с данным ID: " + newUser.getId() + " не обнаружен");
+            throw new NotFoundException("Пользователь с данным ID: " + newUser.getId() + " не обнаружен");
         }
         for (User us : users.values()) {
             if (!us.getId().equals(newUser.getId()) &&

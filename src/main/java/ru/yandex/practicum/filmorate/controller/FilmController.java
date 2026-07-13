@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
 import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
@@ -20,6 +21,16 @@ public class FilmController {
     public Collection<Film> findAllFilms() {
         log.info("Добавлен новый фильм. Всего фильмов {}", films.size());
         return films.values();
+    }
+
+    @GetMapping("/id")
+    public Film findFilmById(@PathVariable Long id) {
+        log.info("Запрос на получение фильма по ID: {}", id);
+        if (!films.containsKey(id)) {
+            log.error("Фильм не найден. id: {}", id);
+            throw new NotFoundException("Фильм с ID " + id + " не найден");
+        }
+        return films.get(id);
     }
 
     //публикация фильма
@@ -70,7 +81,7 @@ public class FilmController {
             return oldFilm;
         }
         log.error("Фильм по данному id {}, не обноружен", newFilm.getId());
-        throw new ConditionsNotMetException("Фильм с данным ID: " + newFilm.getId() + "не обноружен");
+        throw new NotFoundException("Фильм с данным ID: " + newFilm.getId() + "не обноружен");
 
     }
 
