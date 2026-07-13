@@ -24,7 +24,7 @@ public class UserController {
         return users.values();
     }
 
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     public User findUserById(@PathVariable Long id) {
         log.info("Запрос на получение пользователя по ID: {}", id);
         if (!users.containsKey(id)) {

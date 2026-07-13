@@ -23,7 +23,7 @@ public class FilmController {
         return films.values();
     }
 
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     public Film findFilmById(@PathVariable Long id) {
         log.info("Запрос на получение фильма по ID: {}", id);
         if (!films.containsKey(id)) {
