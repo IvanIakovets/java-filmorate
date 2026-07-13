@@ -276,7 +276,7 @@ class UserValidationTest {
         @DisplayName("null birthDate должен вызывать ошибку @NotNull")
         void nullBirthDate_shouldFail() {
             User user = createValidUser();
-            user.setBirthDate(null);
+            user.setBirthday(null);
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
 
@@ -290,7 +290,7 @@ class UserValidationTest {
         @DisplayName("Дата рождения сегодня не должна проходить @Past")
         void todayBirthDate_shouldPass() {
             User user = createValidUser();
-            user.setBirthDate(LocalDate.now());
+            user.setBirthday(LocalDate.now());
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
 
@@ -304,7 +304,7 @@ class UserValidationTest {
         @DisplayName("Дата рождения вчера должна проходить")
         void yesterdayBirthDate_shouldPass() {
             User user = createValidUser();
-            user.setBirthDate(LocalDate.now().minusDays(1));
+            user.setBirthday(LocalDate.now().minusDays(1));
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
 
@@ -315,7 +315,7 @@ class UserValidationTest {
         @DisplayName("Дата рождения завтра должна вызывать ошибку")
         void tomorrowBirthDate_shouldFail() {
             User user = createValidUser();
-            user.setBirthDate(LocalDate.now().plusDays(1));
+            user.setBirthday(LocalDate.now().plusDays(1));
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
 
@@ -329,7 +329,7 @@ class UserValidationTest {
         @DisplayName("Очень старая дата рождения должна проходить")
         void veryOldBirthDate_shouldPass() {
             User user = createValidUser();
-            user.setBirthDate(LocalDate.of(1900, 1, 1));
+            user.setBirthday(LocalDate.of(1900, 1, 1));
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
 
@@ -358,7 +358,7 @@ class UserValidationTest {
                     .email("invalid")
                     .login("invalid login")
                     .name("a".repeat(101))
-                    .birthDate(LocalDate.now().plusDays(1))
+                    .birthday(LocalDate.now().plusDays(1))
                     .build();
 
             Set<ConstraintViolation<User>> violations = validator.validate(user);
@@ -368,7 +368,7 @@ class UserValidationTest {
             assertThat(violations)
                     .extracting(ConstraintViolation::getPropertyPath)
                     .extracting(path -> path.toString())
-                    .containsExactlyInAnyOrder("email", "login", "name", "birthDate");
+                    .containsExactlyInAnyOrder("email", "login", "name", "birthday");
         }
     }
 
@@ -377,7 +377,7 @@ class UserValidationTest {
                 .email("user@example.com")
                 .login("validLogin")
                 .name("Valid Name")
-                .birthDate(LocalDate.of(1990, 1, 1))
+                .birthday(LocalDate.of(1990, 1, 1))
                 .build();
     }
 }
