@@ -12,6 +12,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -54,7 +55,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setEmail(email);
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -69,7 +70,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setEmail(null);
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -128,7 +129,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setLogin(login);
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -143,7 +144,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setLogin(null);
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -181,7 +182,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setLogin("user name");
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -244,7 +245,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setName("a".repeat(101));
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -259,7 +260,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setName("a".repeat(101));
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -278,7 +279,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setBirthday(null);
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -292,7 +293,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setBirthday(LocalDate.now());
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -317,7 +318,7 @@ class UserValidationTest {
             User user = createValidUser();
             user.setBirthday(LocalDate.now().plusDays(1));
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -361,7 +362,7 @@ class UserValidationTest {
                     .birthday(LocalDate.now().plusDays(1))
                     .build();
 
-            Set<ConstraintViolation<User>> violations = validator.validate(user);
+            Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
             assertThat(violations).hasSize(4);
 

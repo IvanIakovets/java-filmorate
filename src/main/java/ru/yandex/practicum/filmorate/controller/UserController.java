@@ -1,12 +1,12 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User createUser(@Valid @RequestBody User user) {
+    public User createUser(@Validated(ValidationGroups.Create.class) @RequestBody User user) {
         for (User us : users.values()) {
             if (us.getEmail().equals(user.getEmail())) {
                 log.error("Попытка добавить пользователя с дублирующим email {}", user.getEmail());
@@ -57,40 +57,49 @@ public class UserController {
     }
 
     @PutMapping
-    public User modifyUser(@Valid @RequestBody User newUser) {
-        if (newUser.getId() == null) {
+    public User modifyUser(@Validated(ValidationGroups.Update.class) @RequestBody User user) {
+        Long userToChangeId = user.getId(); // ID - пользователя которого хотим изменить
+        log.info("Запрос на изменение данных существующего фильма: id {} title {}",
+                userToChangeId, users.get(userToChangeId).getName());
+        /*if (user.getId() == null) {
             log.error("Не указан id пользователя");
             throw new ConditionsNotMetException("Id должен быть указан");
-        }
-        if (!users.containsKey(newUser.getId())) {
-            log.error("Пользователь не найден. id: {}", newUser.getId());
-            throw new NotFoundException("Пользователь с данным ID: " + newUser.getId() + " не обнаружен");
+        }*/
+        if (!users.containsKey(userToChangeId)) {
+            log.error("Пользователь не найден. id: {}", userToChangeId);
+            throw new NotFoundException("Пользователь с данным ID: " + userToChangeId + " не обнаружен");
         }
         for (User us : users.values()) {
-            if (!us.getId().equals(newUser.getId()) &&
-                    us.getEmail().equals(newUser.getEmail())) {
-                log.error("Попытка добавить пользователя с дублирующим email {}", newUser.getEmail());
-                throw new DuplicateDataException("Пользователь с email " + newUser.getEmail() + " уже существует");
+            if (!us.getId().equals(userToChangeId) &&
+                    us.getEmail().equals(user.getEmail())) {
+                log.error("Попытка добавить пользователя с дублирующим email {}", user.getEmail());
+                throw new DuplicateDataException("Пользователь с email " + user.getEmail() + " уже существует");
             }
-            if (!us.getId().equals(newUser.getId()) &&
-                    us.getLogin().equals(newUser.getLogin())) {
-                log.error("Попытка добавить пользователя с дублирующим логином {}", newUser.getLogin());
-                throw new DuplicateDataException("Пользователь с логином " + newUser.getEmail() + " уже существует");
+            if (!us.getId().equals(userToChangeId) &&
+                    us.getLogin().equals(user.getLogin())) {
+                log.error("Попытка добавить пользователя с дублирующим логином {}", user.getLogin());
+                throw new DuplicateDataException("Пользователь с логином " + user.getEmail() + " уже существует");
             }
         }
-        User oldUser = users.get(newUser.getId());
+        User oldUser = users.get(userToChangeId);
         log.info("Старт замены данных пользователя");
-
-        oldUser.setName(newUser.getName());
-        oldUser.setEmail(newUser.getEmail());
-        oldUser.setLogin(newUser.getLogin());
-        oldUser.setBirthday(newUser.getBirthday());
-        log.info("Данные пользователя успешно изменены");
-
-        if (newUser.getName() == null || newUser.getName().isBlank()) {
-            log.info("Логин пользователя используется в качестви имени");
-            oldUser.setName(oldUser.getLogin());
+        if (user.getName() != null) {
+            oldUser.setName(user.getName());
+            log.info("Имя пользователя успешно изменено");
         }
+        if (user.getEmail() != null) {
+            oldUser.setEmail(user.getEmail());
+            log.info("Email пользователя успешно изменен");
+        }
+        if (user.getLogin() != null) {
+            oldUser.setLogin(user.getLogin());
+            log.info("Логин пользователя успешно изменен");
+        }
+        if (user.getBirthday() != null) {
+            oldUser.setBirthday(user.getBirthday());
+            log.info("День рожденье пользователя успешно изменено");
+        }
+        log.info("Данные пользователя успешно обновлены");
         return oldUser;
 
     }

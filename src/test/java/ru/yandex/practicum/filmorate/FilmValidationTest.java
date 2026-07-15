@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
 import java.util.Set;
@@ -39,7 +40,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setName(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -54,7 +55,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setName(name);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -117,7 +118,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setDescription("a".repeat(201));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -136,7 +137,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setReleaseDate(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -161,7 +162,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setReleaseDate(LocalDate.of(1895, 12, 27));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -175,7 +176,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setReleaseDate(LocalDate.of(1800, 1, 1));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -189,7 +190,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setReleaseDate(LocalDate.now());
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -260,7 +261,7 @@ class FilmValidationTest {
             Film film = createValidFilm();
             film.setDuration(-1L);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
@@ -304,7 +305,7 @@ class FilmValidationTest {
                     .duration(-1L)
                     .build();
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
             assertThat(violations).hasSize(4);
 
