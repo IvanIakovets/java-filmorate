@@ -7,11 +7,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
 public class User {
-    @NotNull(groups = ValidationGroups.Update.class)
+    @NotNull(groups = {ValidationGroups.Update.class, ValidationGroups.Delete.class})
     private Long  id;
 
     @NotBlank(message = "Email не может быть пустым",  groups = ValidationGroups.Create.class)
@@ -34,4 +35,5 @@ public class User {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
 
+    private Set<Long> userFriends;
 }

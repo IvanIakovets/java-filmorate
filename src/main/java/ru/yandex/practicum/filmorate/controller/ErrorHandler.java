@@ -2,8 +2,10 @@ package ru.yandex.practicum.filmorate.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,12 +79,36 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleMissingParams(MissingServletRequestParameterException ex) {
+        log.error("Отсутствует обязательный параметр: {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .message("Отсутствует обязательный параметр: " + ex.getParameterName())
+                .errorCode("MISSING_PARAMETER")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleNotReadable(HttpMessageNotReadableException ex) {
+        log.error("Некорректный формат запроса: {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .message("Некорректный формат запроса. Проверьте структуру JSON.")
+                .errorCode("BAD_REQUEST")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneralException(Exception ex) {
         log.error("Непредвиденная ошибка: ", ex);
         return ErrorResponse.builder()
-                .message(ex.getMessage())
+                .message("Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.") // ← Скрываем детали
                 .errorCode("INTERNAL_SERVER_ERROR")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .timestamp(LocalDateTime.now())

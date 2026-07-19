@@ -1,20 +1,18 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
 public class Film {
-    @NotNull(groups = ValidationGroups.Update.class)
+    @NotNull(groups = {ValidationGroups.Update.class, ValidationGroups.Delete.class})
     private Long id;
 
     @NotBlank(message = "Название фильма не может быть пустым", groups = ValidationGroups.Create.class)
@@ -29,7 +27,9 @@ public class Film {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate releaseDate;
 
-    @PositiveOrZero(message = "Продолжительность фильма должна быть положительным числом",
+    @Positive(message = "Продолжительность фильма должна быть положительным числом",
             groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Long duration;
+
+    private Set<Long> filmUserLikes;
 }
