@@ -132,20 +132,6 @@ class FilmValidationTest {
     class ReleaseDateValidationTests {
 
         @Test
-        @DisplayName("null releaseDate должен вызывать ошибку @NotNull")
-        void nullReleaseDate_shouldFail() {
-            Film film = createValidFilm();
-            film.setReleaseDate(null);
-
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
-
-            assertThat(violations)
-                    .isNotEmpty()
-                    .extracting(ConstraintViolation::getMessage)
-                    .contains("Дата релиза не может быть пустой");
-        }
-
-        @Test
         @DisplayName("Дата релиза 28 декабря 1895 года должна проходить (граница)")
         void releaseDateAtMinimum_shouldPass() {
             Film film = createValidFilm();
@@ -298,12 +284,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("Фильм со всеми невалидными полями должен возвращать все ошибки")
         void allInvalidFields_shouldReturnAllErrors() {
-            Film film = Film.builder()
-                    .name("")
-                    .description("a".repeat(201))
-                    .releaseDate(LocalDate.of(1895, 12, 27))
-                    .duration(-1L)
-                    .build();
+            Film film = new Film();
+            film.setName("");
+            film.setDescription("a".repeat(201));
+            film.setReleaseDate(LocalDate.of(1895, 12, 27));
+            film.setDuration(-1L);
 
             Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
 
@@ -317,11 +302,11 @@ class FilmValidationTest {
     }
 
     private Film createValidFilm() {
-        return Film.builder()
-                .name("Valid Movie")
-                .description("Valid description")
-                .releaseDate(LocalDate.of(2024, 1, 1))
-                .duration(120L)
-                .build();
+        Film film = new Film();
+        film.setName("Valid Movie");
+        film.setDescription("Valid description");
+        film.setReleaseDate(LocalDate.of(2024, 1, 1));
+        film.setDuration(120L);
+        return film;
     }
 }

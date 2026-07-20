@@ -355,12 +355,11 @@ class UserValidationTest {
         @Test
         @DisplayName("Пользователь со всеми невалидными полями должен возвращать все ошибки")
         void allInvalidFields_shouldReturnAllErrors() {
-            User user = User.builder()
-                    .email("invalid")
-                    .login("invalid login")
-                    .name("a".repeat(101))
-                    .birthday(LocalDate.now().plusDays(1))
-                    .build();
+            User user = new User();
+            user.setEmail("invalid");
+            user.setLogin("invalid login");
+            user.setName("a".repeat(101));
+            user.setBirthday(LocalDate.now().plusDays(1));
 
             Set<ConstraintViolation<User>> violations = validator.validate(user, ValidationGroups.Create.class);
 
@@ -374,11 +373,11 @@ class UserValidationTest {
     }
 
     private User createValidUser() {
-        return User.builder()
-                .email("user@example.com")
-                .login("validLogin")
-                .name("Valid Name")
-                .birthday(LocalDate.of(1990, 1, 1))
-                .build();
+        User user = new User();
+        user.setEmail("user@example.com");
+        user.setLogin("validLogin");
+        user.setName("Valid Name");
+        user.setBirthday(LocalDate.of(1990, 1, 1));
+        return user;
     }
 }
