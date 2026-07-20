@@ -7,10 +7,10 @@ import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
-@Builder
 public class Film {
     @NotNull(groups = {ValidationGroups.Update.class, ValidationGroups.Delete.class})
     private Long id;
@@ -31,5 +31,5 @@ public class Film {
             groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Long duration;
 
-    private Set<Long> filmUserLikes;
+    private Set<Long> filmUserLikes = new HashSet<>();
 }

@@ -33,13 +33,12 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public boolean deleteUser(Long userId) {
-        if (users.containsKey(userId)) {
-            users.remove(userId);
-            return true;
-        } else {
+        if (!users.containsKey(userId)) {
             log.error("Пользователь не найден. id: {}", userId);
             throw new NotFoundException("Пользователь с данным ID: " + userId + " не найден");
         }
+        users.remove(userId);
+        return true;
     }
 
     @Override
@@ -94,56 +93,34 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User findUserById(Long id) {
-        if (!users.containsKey(id)) {
-            log.error("Пользователь не найден. id: {}", id);
-            throw new NotFoundException("Пользователь с ID " + id + " не найден");
-        }
-        return users.get(id);
-    }
-
-    @Override
-    public boolean checkUserId(Long userId) {
-        if (users.containsKey(userId)) {
-            return true;
-        } else {
+    public User findUserById(Long userId) {
+        if (!users.containsKey(userId)) {
             log.error("Пользователь не найден. id: {}", userId);
             throw new NotFoundException("Пользователь с ID " + userId + " не найден");
         }
+        return users.get(userId);
     }
 
     @Override
     public boolean addFriend(Long userId, Long friendId) {
-        checkUserId(userId);
-        checkUserId(friendId);
-        Set<Long> userFriends =  users.get(userId).getUserFriends();
-        if (userFriends == null) {
-            userFriends = new HashSet<>();
-        }
+        User user = findUserById(userId);
+        User friend = findUserById(friendId);
+        Set<Long> userFriends =  user.getUserFriends();
         userFriends.add(friendId);
-        Set<Long> friendFriends = users.get(friendId).getUserFriends();
-        if (friendFriends == null) {
-            friendFriends = new HashSet<>();
-        }
+        Set<Long> friendFriends = friend.getUserFriends();
         friendFriends.add(userId);
-        users.get(userId).setUserFriends(userFriends);
-        users.get(friendId).setUserFriends(friendFriends);
         return true;
     }
 
     @Override
     public boolean deleteFriend(Long userId, Long friendId) {
-        checkUserId(userId);
-        checkUserId(friendId);
+        User user = findUserById(userId);
+        User friend = findUserById(friendId);
 
-        Set<Long> userFriends = Optional.ofNullable(users.get(userId).getUserFriends())
-                .orElse(new HashSet<>());
+        Set<Long> userFriends = user.getUserFriends();
         userFriends.remove(friendId);
-        Set<Long> friendFriends = Optional.ofNullable(users.get(friendId).getUserFriends())
-                .orElse(new HashSet<>());
+        Set<Long> friendFriends = friend.getUserFriends();
         friendFriends.remove(userId);
-        users.get(userId).setUserFriends(userFriends);
-        users.get(friendId).setUserFriends(friendFriends);
         return true;
     }
 
