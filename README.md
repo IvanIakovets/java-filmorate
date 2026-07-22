@@ -3,6 +3,7 @@ Template repository for Filmorate project.
 
 
 # Схема базы данных Filmorate
+ссылка на диаграму: https://dbdiagram.io/d/6a60e2d3067336e1ded1e92c
 
 ## Таблицы
 
