@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
@@ -13,6 +14,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
+    private final FriendshipService friendshipService;
 
     public User createUser(User user) {
         log.info("Сервис: запрос на создание пользователя с email: {}", user.getEmail());
@@ -54,7 +56,9 @@ public class UserService {
 
     public boolean deleteFriend(Long userId, Long friendId) {
         log.info("Друг удален из списка друзей пользователя");
-        return userStorage.deleteFriend(userId, friendId);
+        userStorage.deleteFriend(userId, friendId);
+        friendshipService.removeFriendship(userId, friendId);
+        return true;
     }
 
     public Collection<User> getFriendsList(Long userId) {
@@ -87,5 +91,31 @@ public class UserService {
         }
 
         return friendList;
+    }
+
+    /*public boolean addFriend(Long userId, Long friendId) {
+        friendshipService.sendFriendRequest(userId, friendId);
+        return true;
+    }*/
+
+    public boolean confirmFriend(Long friendshipId, Long userId) {
+        friendshipService.confirmFriendship(friendshipId, userId);
+        return true;
+    }
+
+    public void declineFriend(Long friendshipId, Long userId) {
+        friendshipService.declineFriendship(friendshipId, userId);
+    }
+
+    public void cancelFriendRequest(Long friendshipId, Long userId) {
+        friendshipService.cancelFriendRequest(friendshipId, userId);
+    }
+
+    public List<Friendship> getIncomingRequests(Long userId) {
+        return friendshipService.getIncomingRequests(userId);
+    }
+
+    public List<Friendship> getOutgoingRequests(Long userId) {
+        return friendshipService.getOutgoingRequests(userId);
     }
 }

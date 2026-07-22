@@ -64,6 +64,14 @@ public class InMemoryFilmStorage implements FilmStorage {
             oldFilm.setReleaseDate(film.getReleaseDate());
             log.info("Дата выхода фильма успешно изменена");
         }
+        if (film.getGenre() != null) {
+            oldFilm.setGenre(film.getGenre());
+            log.info("Жанр фильма успешно изменен на: {}", film.getGenre().getDisplayName());
+        }
+        if (film.getMpaRating() != null) {
+            oldFilm.setMpaRating(film.getMpaRating());
+            log.info("Рейтинг MPA фильма успешно изменен на: {}", film.getMpaRating().getCode());
+        }
 
         log.info("Данные фильма обновлены");
         return oldFilm;

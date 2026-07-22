@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
 import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
 import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exeptions.IllegalArgumentException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -97,6 +98,18 @@ public class ErrorHandler {
         log.error("Некорректный формат запроса: {}", ex.getMessage());
         return ErrorResponse.builder()
                 .message("Некорректный формат запроса. Проверьте структуру JSON.")
+                .errorCode("BAD_REQUEST")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleNotReadable(IllegalArgumentException ex) {
+        log.error("Некорректный аргумент: {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .message("Некорректный аргумент. Проверьте структуру JSON.")
                 .errorCode("BAD_REQUEST")
                 .status(HttpStatus.BAD_REQUEST.value())
                 .timestamp(LocalDateTime.now())

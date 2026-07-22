@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
+import ru.yandex.practicum.filmorate.validations.ValidGenre;
+import ru.yandex.practicum.filmorate.validations.ValidMpaRating;
 import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
@@ -30,6 +32,14 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом",
             groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Long duration;
+
+    @NotNull(groups = ValidationGroups.Create.class)
+    @ValidGenre(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private Genre genre;
+
+    @NotNull(groups = {ValidationGroups.Create.class})
+    @ValidMpaRating(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private MpaRating mpaRating;
 
     private Set<Long> filmUserLikes = new HashSet<>();
 }
