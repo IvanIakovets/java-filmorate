@@ -1,12 +1,45 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
+import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
+import ru.yandex.practicum.filmorate.validations.ValidGenre;
+import ru.yandex.practicum.filmorate.validations.ValidMpaRating;
+import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
+import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
-/**
- * Film.
- */
-@Getter
-@Setter
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
+
+@Data
 public class Film {
+    @NotNull(groups = {ValidationGroups.Update.class, ValidationGroups.Delete.class})
+    private Long id;
+
+    @NotBlank(message = "Название фильма не может быть пустым", groups = ValidationGroups.Create.class)
+    private String name;
+
+    @Size(max = 200, message = "Описание не может быть длиннее 200 символов",
+            groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private String description;
+
+    @NotNull(message = "Дата релиза не может быть пустой", groups = ValidationGroups.Create.class)
+    @ValidReleaseDate(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private LocalDate releaseDate;
+
+    @Positive(message = "Продолжительность фильма должна быть положительным числом",
+            groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private Long duration;
+
+    @NotNull(groups = ValidationGroups.Create.class)
+    @ValidGenre(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private Genre genre;
+
+    @NotNull(groups = {ValidationGroups.Create.class})
+    @ValidMpaRating(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
+    private MpaRating mpaRating;
+
+    private Set<Long> filmUserLikes = new HashSet<>();
 }
