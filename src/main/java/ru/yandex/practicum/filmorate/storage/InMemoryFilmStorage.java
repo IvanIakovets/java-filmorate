@@ -1,15 +1,18 @@
 package ru.yandex.practicum.filmorate.storage;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
-import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.DuplicateDataException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
+@Qualifier("memory")
 public class InMemoryFilmStorage implements FilmStorage {
     private final Map<Long, Film> films = new HashMap<>();
 
@@ -64,13 +67,13 @@ public class InMemoryFilmStorage implements FilmStorage {
             oldFilm.setReleaseDate(film.getReleaseDate());
             log.info("Дата выхода фильма успешно изменена");
         }
-        if (film.getGenre() != null) {
-            oldFilm.setGenre(film.getGenre());
-            log.info("Жанр фильма успешно изменен на: {}", film.getGenre().getDisplayName());
+        if (film.getGenres() != null) {
+            oldFilm.setGenres(film.getGenres());
+            log.info("Жанр фильма успешно изменен на: {}", film.getGenres());
         }
         if (film.getMpaRating() != null) {
             oldFilm.setMpaRating(film.getMpaRating());
-            log.info("Рейтинг MPA фильма успешно изменен на: {}", film.getMpaRating().getCode());
+            log.info("Рейтинг MPA фильма успешно изменен на: {}", film.getMpaRating().getName());
         }
 
         log.info("Данные фильма обновлены");
@@ -93,6 +96,18 @@ public class InMemoryFilmStorage implements FilmStorage {
             throw new NotFoundException("Фильм с ID " + filmId + " не найден");
         }
         return films.get(filmId);
+    }
+
+    @Override
+    public Collection<Film> getPopularFilms(int count) {
+        return films.values().stream()
+                .sorted((f1, f2) -> {
+                    int likes1 = f1.getFilmUserLikes() != null ? f1.getFilmUserLikes().size() : 0;
+                    int likes2 = f2.getFilmUserLikes() != null ? f2.getFilmUserLikes().size() : 0;
+                    return Integer.compare(likes2, likes1);
+                })
+                .limit(count)
+                .collect(Collectors.toList());
     }
 
     private void checkDuplicateFilm(Film film) {

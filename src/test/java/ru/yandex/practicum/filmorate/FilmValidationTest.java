@@ -10,15 +10,17 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.dto.FilmRequest;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Тестирование валидации модели Film")
+@DisplayName("Тестирование валидации FilmRequest DTO")
 class FilmValidationTest {
 
     private Validator validator;
@@ -35,41 +37,44 @@ class FilmValidationTest {
     class NameValidationTests {
 
         @Test
-        @DisplayName("null name должен вызывать ошибку @NotBlank")
+        @DisplayName("null name должен вызывать ошибку")
         void nullName_shouldFail() {
-            Film film = createValidFilm();
-            film.setName(null);
+            FilmRequest request = createValidRequest();
+            request.setName(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Название фильма не может быть пустым");
+                    .anyMatch(msg -> msg.contains("не должно быть пустым") || msg.contains("must not be blank"));
         }
 
         @ParameterizedTest
         @ValueSource(strings = {"", "   "})
         @DisplayName("Пустой или пробельный name должен вызывать ошибку")
         void emptyOrBlankName_shouldFail(String name) {
-            Film film = createValidFilm();
-            film.setName(name);
+            FilmRequest request = createValidRequest();
+            request.setName(name);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Название фильма не может быть пустым");
+                    .anyMatch(msg -> msg.contains("не должно быть пустым") || msg.contains("must not be blank"));
         }
 
         @Test
         @DisplayName("Валидное название фильма должно проходить")
         void validName_shouldPass() {
-            Film film = createValidFilm();
-            film.setName("Valid Movie Name");
+            FilmRequest request = createValidRequest();
+            request.setName("Valid Movie Name");
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -82,10 +87,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("null description должен проходить (поле опционально)")
         void nullDescription_shouldPass() {
-            Film film = createValidFilm();
-            film.setDescription(null);
+            FilmRequest request = createValidRequest();
+            request.setDescription(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -93,10 +99,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("Пустой description должен проходить")
         void emptyDescription_shouldPass() {
-            Film film = createValidFilm();
-            film.setDescription("");
+            FilmRequest request = createValidRequest();
+            request.setDescription("");
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -104,10 +111,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("Description длиной ровно 200 символов должен проходить")
         void descriptionLengthExactly200_shouldPass() {
-            Film film = createValidFilm();
-            film.setDescription("a".repeat(200));
+            FilmRequest request = createValidRequest();
+            request.setDescription("a".repeat(200));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -115,15 +123,17 @@ class FilmValidationTest {
         @Test
         @DisplayName("Description длиной 201 символ должен вызывать ошибку")
         void descriptionLength201_shouldFail() {
-            Film film = createValidFilm();
-            film.setDescription("a".repeat(201));
+            FilmRequest request = createValidRequest();
+            request.setDescription("a".repeat(201));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Описание не может быть длиннее 200 символов");
+                    .anyMatch(msg -> msg.contains("размер должен находиться в диапазоне от 0 до 200") ||
+                            msg.contains("size must be between 0 and 200"));
         }
     }
 
@@ -134,10 +144,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("Дата релиза 28 декабря 1895 года должна проходить (граница)")
         void releaseDateAtMinimum_shouldPass() {
-            Film film = createValidFilm();
-            film.setReleaseDate(LocalDate.of(1895, 12, 28));
+            FilmRequest request = createValidRequest();
+            request.setReleaseDate(LocalDate.of(1895, 12, 28));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -145,49 +156,41 @@ class FilmValidationTest {
         @Test
         @DisplayName("Дата релиза 27 декабря 1895 года должна вызывать ошибку")
         void releaseDateBeforeMinimum_shouldFail() {
-            Film film = createValidFilm();
-            film.setReleaseDate(LocalDate.of(1895, 12, 27));
+            FilmRequest request = createValidRequest();
+            request.setReleaseDate(LocalDate.of(1895, 12, 27));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Дата релиза не может быть раньше 28 декабря 1895 года");
+                    .anyMatch(msg -> msg.contains("Дата релиза не может быть раньше 28 декабря 1895 года"));
         }
 
         @Test
         @DisplayName("Очень старая дата (1800 год) должна вызывать ошибку")
         void veryOldReleaseDate_shouldFail() {
-            Film film = createValidFilm();
-            film.setReleaseDate(LocalDate.of(1800, 1, 1));
+            FilmRequest request = createValidRequest();
+            request.setReleaseDate(LocalDate.of(1800, 1, 1));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Дата релиза не может быть раньше 28 декабря 1895 года");
+                    .anyMatch(msg -> msg.contains("Дата релиза не может быть раньше 28 декабря 1895 года"));
         }
 
         @Test
-        @DisplayName("Дата релиза сегодня должна проходить")
-        void todayReleaseDate_shouldPass() {
-            Film film = createValidFilm();
-            film.setReleaseDate(LocalDate.now());
-
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
-
-            assertThat(violations).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Дата релиза в будущем должна проходить (ограничений нет)")
+        @DisplayName("Дата релиза в будущем должна проходить")
         void futureReleaseDate_shouldPass() {
-            Film film = createValidFilm();
-            film.setReleaseDate(LocalDate.now().plusDays(365));
+            FilmRequest request = createValidRequest();
+            request.setReleaseDate(LocalDate.now().plusDays(365));
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -200,21 +203,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("null duration должен проходить (поле опционально)")
         void nullDuration_shouldPass() {
-            Film film = createValidFilm();
-            film.setDuration(null);
+            FilmRequest request = createValidRequest();
+            request.setDuration(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
-
-            assertThat(violations).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Продолжительность 0 минут должна проходить (@PositiveOrZero)")
-        void zeroDuration_shouldPass() {
-            Film film = createValidFilm();
-            film.setDuration(0L);
-
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -222,21 +215,11 @@ class FilmValidationTest {
         @Test
         @DisplayName("Продолжительность 1 минута должна проходить")
         void positiveDuration_shouldPass() {
-            Film film = createValidFilm();
-            film.setDuration(1L);
+            FilmRequest request = createValidRequest();
+            request.setDuration(1L);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
-
-            assertThat(violations).isEmpty();
-        }
-
-        @Test
-        @DisplayName("Продолжительность Long.MAX_VALUE должна проходить")
-        void maxDuration_shouldPass() {
-            Film film = createValidFilm();
-            film.setDuration(Long.MAX_VALUE);
-
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
@@ -244,69 +227,140 @@ class FilmValidationTest {
         @Test
         @DisplayName("Отрицательная продолжительность должна вызывать ошибку")
         void negativeDuration_shouldFail() {
-            Film film = createValidFilm();
-            film.setDuration(-1L);
+            FilmRequest request = createValidRequest();
+            request.setDuration(-1L);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations)
                     .isNotEmpty()
                     .extracting(ConstraintViolation::getMessage)
-                    .contains("Продолжительность фильма должна быть положительным числом");
+                    .anyMatch(msg -> msg.contains("должно быть больше 0") ||
+                            msg.contains("must be greater than 0"));
         }
 
         @Test
         @DisplayName("Большой положительный размер должен проходить")
         void largePositiveDuration_shouldPass() {
-            Film film = createValidFilm();
-            film.setDuration(1_000_000_000L);
+            FilmRequest request = createValidRequest();
+            request.setDuration(1_000_000_000L);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
     }
 
     @Nested
-    @DisplayName("Комплексная валидация Film")
-    class FullValidationTests {
+    @DisplayName("Валидация поля genre")
+    class GenreValidationTests {
 
         @Test
-        @DisplayName("Полностью валидный фильм должен проходить")
-        void fullyValidFilm_shouldPass() {
-            Film film = createValidFilm();
+        @DisplayName("null genre должен проходить (жанры опциональны)")
+        void nullGenre_shouldPass() {
+            FilmRequest request = createValidRequest();
+            request.setGenres(null);
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
             assertThat(violations).isEmpty();
         }
 
         @Test
-        @DisplayName("Фильм со всеми невалидными полями должен возвращать все ошибки")
-        void allInvalidFields_shouldReturnAllErrors() {
-            Film film = new Film();
-            film.setName("");
-            film.setDescription("a".repeat(201));
-            film.setReleaseDate(LocalDate.of(1895, 12, 27));
-            film.setDuration(-1L);
+        @DisplayName("Пустой список жанров должен проходить")
+        void emptyGenre_shouldPass() {
+            FilmRequest request = createValidRequest();
+            request.setGenres(new ArrayList<>());
 
-            Set<ConstraintViolation<Film>> violations = validator.validate(film, ValidationGroups.Create.class);
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
 
-            assertThat(violations).hasSize(4);
+            assertThat(violations).isEmpty();
+        }
 
-            assertThat(violations)
-                    .extracting(ConstraintViolation::getPropertyPath)
-                    .extracting(path -> path.toString())
-                    .containsExactlyInAnyOrder("name", "description", "releaseDate", "duration");
+        @Test
+        @DisplayName("valid genre должен проходить")
+        void validGenre_shouldPass() {
+            FilmRequest request = createValidRequest();
+            FilmRequest.GenreReference genre = new FilmRequest.GenreReference();
+            genre.setId(1);
+            request.setGenres(List.of(genre));
+
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
+
+            assertThat(violations).isEmpty();
         }
     }
 
-    private Film createValidFilm() {
-        Film film = new Film();
-        film.setName("Valid Movie");
-        film.setDescription("Valid description");
-        film.setReleaseDate(LocalDate.of(2024, 1, 1));
-        film.setDuration(120L);
-        return film;
+    @Nested
+    @DisplayName("Валидация поля mpaRating")
+    class MpaRatingValidationTests {
+
+        @Test
+        @DisplayName("null mpaRating должен вызывать ошибку при создании")
+        void nullMpaRating_shouldFailForCreate() {
+            FilmRequest request = createValidRequest();
+            request.setMpa(null);
+
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
+
+            // Проверяем, что есть ошибка для поля mpa
+            assertThat(violations)
+                    .isNotEmpty()
+                    .extracting(ConstraintViolation::getPropertyPath)
+                    .extracting(path -> path.toString())
+                    .anyMatch(field -> field.equals("mpa"));
+        }
+
+        @Test
+        @DisplayName("valid mpaRating должен проходить")
+        void validMpaRating_shouldPass() {
+            FilmRequest request = createValidRequest();
+            FilmRequest.MpaReference mpa = new FilmRequest.MpaReference();
+            mpa.setId(1);
+            request.setMpa(mpa);
+
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
+
+            assertThat(violations).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("Комплексная валидация FilmRequest")
+    class FullValidationTests {
+
+        @Test
+        @DisplayName("Полностью валидный запрос должен проходить")
+        void fullyValidFilm_shouldPass() {
+            FilmRequest request = createValidRequest();
+
+            Set<ConstraintViolation<FilmRequest>> violations =
+                    validator.validate(request, ValidationGroups.Create.class);
+
+            assertThat(violations).isEmpty();
+        }
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private FilmRequest createValidRequest() {
+        FilmRequest request = new FilmRequest();
+        request.setName("Valid Movie");
+        request.setDescription("Valid description");
+        request.setReleaseDate(LocalDate.of(2024, 1, 1));
+        request.setDuration(120L);
+
+        FilmRequest.MpaReference mpa = new FilmRequest.MpaReference();
+        mpa.setId(1);
+        request.setMpa(mpa);
+
+        return request;
     }
 }

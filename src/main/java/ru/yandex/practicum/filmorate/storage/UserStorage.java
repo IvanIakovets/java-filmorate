@@ -20,4 +20,7 @@ public interface UserStorage {
     boolean addFriend(Long userId, Long friendId);
 
     boolean deleteFriend(Long userId, Long friendId);
+
+    default void saveFriends(User user) {
+    }
 }

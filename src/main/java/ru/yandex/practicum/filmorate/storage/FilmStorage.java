@@ -16,4 +16,9 @@ public interface FilmStorage {
     Collection<Film> getAllFilms();
 
     Film getFilmById(Long filmId);
+
+    Collection<Film> getPopularFilms(int count);
+
+    default void syncLikes(Film film) {
+    }
 }

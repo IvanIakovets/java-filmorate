@@ -1,10 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.filmorate.exceptions.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FriendshipStorage;
@@ -15,17 +16,22 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class FriendshipService {
     private final FriendshipStorage friendshipStorage;
     private final UserStorage userStorage;
 
-    //Отправка заявки в друзья
+    public FriendshipService(@Qualifier("friendshipDbStorage") FriendshipStorage friendshipStorage,
+                             @Qualifier("userDbStorage") UserStorage userStorage) {
+        this.friendshipStorage = friendshipStorage;
+        this.userStorage = userStorage;
+    }
+
+    @Transactional
     public Friendship sendFriendRequest(Long requesterId, Long addresseeId) {
-        log.info("Отправка заявки в друзья: от пользователя {} пользователю {}", requesterId, addresseeId);
+        log.info("Отправка заявки в друзья: от {} к {}", requesterId, addresseeId);
 
         validateUserExist(requesterId, addresseeId);
-        validateNotSameUser(addresseeId, requesterId);
+        validateNotSameUser(requesterId, addresseeId);
 
         Optional<Friendship> existing = friendshipStorage.findByUsers(requesterId, addresseeId);
 
@@ -33,72 +39,77 @@ public class FriendshipService {
             Friendship friendship = existing.get();
 
             if (friendship.getStatus() == Friendship.FriendshipStatus.CONFIRMED) {
-                log.error("Попытка отправить заявку, но пользователи уже друзья: {} и {}", requesterId, addresseeId);
+                log.error("Пользователи уже друзья: {} и {}", requesterId, addresseeId);
                 throw new ConditionsNotMetException("Пользователи уже являются друзьями");
             }
 
             if (friendship.getStatus() == Friendship.FriendshipStatus.PENDING) {
-                //если заявка от текущего пользователя
+                // Если заявка от текущего пользователя
                 if (friendship.getRequesterId().equals(requesterId)) {
-                    log.error("Попытка отправить повторную заявку от пользователя {} пользователю {}", requesterId, addresseeId);
+                    log.error("Заявка уже отправлена от {} к {}", requesterId, addresseeId);
                     throw new ConditionsNotMetException("Заявка уже отправлена");
                 }
 
-                //если втречная заявка подтверждаем
-                log.info("Обнаружена встречная заявка между {} и {}, выполняем автоподтверждение", requesterId, addresseeId);
-                return confirmFriendship(friendship.getId(), addresseeId);
+                // Если встречная заявка — автоподтверждение
+                if (friendship.getRequesterId().equals(addresseeId)) {
+                    log.info("Обнаружена встречная заявка, выполняем автоподтверждение");
+                    return confirmFriendship(friendship.getId(), addresseeId);
+                }
             }
         }
 
+        // Создаем новую заявку
         Friendship newFriendship = Friendship.builder()
                 .requesterId(requesterId)
                 .addresseeId(addresseeId)
                 .status(Friendship.FriendshipStatus.PENDING)
                 .build();
 
-        Friendship created  = friendshipStorage.create(newFriendship);
-        log.info("Создана новая заявка в друзья: id={}, от {} к {}", created.getId(), requesterId, addresseeId);
+        Friendship created = friendshipStorage.create(newFriendship);
+        log.info("Создана заявка с id {}", created.getId());
+
+        // ОТПРАВИТЕЛЬ СРАЗУ ДОБАВЛЯЕТ АДРЕСАТА В СВОЙ СПИСК ДРУЗЕЙ
+        addFriendToUser(requesterId, addresseeId);
 
         return created;
     }
 
-    //подтвердить дружбу
+    @Transactional
     public Friendship confirmFriendship(Long friendshipId, Long userId) {
         log.debug("Подтверждение заявки: friendshipId={}, userId={}", friendshipId, userId);
 
-        //находим заявку
         Friendship friendship = friendshipStorage.findById(friendshipId)
                 .orElseThrow(() -> {
                     log.error("Заявка с id {} не найдена", friendshipId);
                     return new NotFoundException("Заявка с id " + friendshipId + " не найдена");
                 });
 
-        // проверяем права (только получатель может подтвердить)
+        // Проверяем, что подтверждает получатель
         if (!friendship.getAddresseeId().equals(userId)) {
-            log.warn("Попытка подтвердить заявку не от получателя: friendshipId={}, userId={}", friendshipId, userId);
+            log.warn("Попытка подтвердить заявку не от получателя: userId={}", userId);
             throw new ConditionsNotMetException("Только получатель может подтвердить заявку");
         }
 
-        // проверяем статус
         if (friendship.getStatus() != Friendship.FriendshipStatus.PENDING) {
-            log.warn("Попытка подтвердить уже обработанную заявку: friendshipId={}, status={}", friendshipId, friendship.getStatus());
+            log.warn("Заявка уже обработана: status={}", friendship.getStatus());
             throw new ConditionsNotMetException("Заявка уже обработана");
         }
 
-        // обновляем статус
+        // Обновляем статус
         friendship.setStatus(Friendship.FriendshipStatus.CONFIRMED);
         Friendship confirmed = friendshipStorage.update(friendship);
-        log.info("Заявка подтверждена: friendshipId={}, пользователи {} и {} теперь друзья",
-                friendshipId, friendship.getRequesterId(), friendship.getAddresseeId());
+        log.info("Заявка подтверждена: friendshipId={}", friendshipId);
 
-        // добавляем друг друга в списки друзей
-        addFriendToBothUsers(friendship.getRequesterId(), friendship.getAddresseeId());
+        // ПОЛУЧАТЕЛЬ ДОБАВЛЯЕТ ОТПРАВИТЕЛЯ В СВОЙ СПИСОК ДРУЗЕЙ
+        // (отправитель уже добавил получателя ранее при отправке заявки)
+        addFriendToUser(userId, friendship.getRequesterId());
 
         return confirmed;
     }
 
-    //отклонить заявку
     public void declineFriendship(Long friendshipId, Long userId) {
+        log.debug("Отклонение заявки: friendshipId={}, userId={}", friendshipId, userId);
+
         Friendship friendship = friendshipStorage.findById(friendshipId)
                 .orElseThrow(() -> new NotFoundException("Заявка не найдена"));
 
@@ -110,11 +121,18 @@ public class FriendshipService {
             throw new ConditionsNotMetException("Заявка уже обработана");
         }
 
+        // Удаляем заявку
         friendshipStorage.delete(friendshipId);
+
+        // УДАЛЯЕМ АДРЕСАТА ИЗ СПИСКА ДРУЗЕЙ ОТПРАВИТЕЛЯ
+        removeFriendFromUser(friendship.getRequesterId(), friendship.getAddresseeId());
+
+        log.info("Заявка отклонена: friendshipId={}", friendshipId);
     }
 
-    //отозвать заявку
     public void cancelFriendRequest(Long friendshipId, Long userId) {
+        log.debug("Отзыв заявки: friendshipId={}, userId={}", friendshipId, userId);
+
         Friendship friendship = friendshipStorage.findById(friendshipId)
                 .orElseThrow(() -> new NotFoundException("Заявка не найдена"));
 
@@ -126,63 +144,100 @@ public class FriendshipService {
             throw new ConditionsNotMetException("Заявка уже обработана");
         }
 
+        // Удаляем заявку
         friendshipStorage.delete(friendshipId);
+
+        // УДАЛЯЕМ АДРЕСАТА ИЗ СПИСКА ДРУЗЕЙ ОТПРАВИТЕЛЯ
+        removeFriendFromUser(friendship.getRequesterId(), friendship.getAddresseeId());
+
+        log.info("Заявка отозвана: friendshipId={}", friendshipId);
     }
 
-    //удалить из друзей
     public void removeFriendship(Long userId, Long friendId) {
+        log.info("Удаление из друзей: {} и {}", userId, friendId);
+
         validateUserExist(userId, friendId);
         validateNotSameUser(userId, friendId);
 
-        if (!areFriends(userId, friendId)) {
-            throw new ConditionsNotMetException("Пользователи не являются друзьями");
+        // Проверяем, что они друзья (есть подтвержденная заявка)
+        Optional<Friendship> friendship = friendshipStorage.findByUsers(userId, friendId);
+
+        if (friendship.isEmpty()) {
+            log.info("Дружба не найдена");
+            return;
+        }
+
+        if (!userStorage.findUserById(userId).getUserFriends().contains(friendId)) {
+            log.info("Пользователи не являются друзьями");
+            return;
         }
 
         // Удаляем запись о дружбе
-        friendshipStorage.deleteByUsers(userId, friendId);
+        friendshipStorage.delete(friendship.get().getId());
+        userStorage.deleteFriend(userId, friendId);
+
+        // УДАЛЯЕМ ДРУГА ИЗ СПИСКА ТОЛЬКО У ИНИЦИАТОРА
+        removeFriendFromUser(userId, friendId);
+
+        // Проверяем, есть ли встречная заявка (от friendId к userId)
+        // Если есть — она тоже удаляется, но НЕ ВЛИЯЕТ на списки друзей
+        Optional<Friendship> reverse = friendshipStorage.findByUsers(friendId, userId);
+        reverse.ifPresent(f -> {
+            friendshipStorage.delete(f.getId());
+            log.debug("Удалена встречная заявка от {} к {}", friendId, userId);
+        });
+
+        log.info("Пользователь {} удалил {} из друзей", userId, friendId);
     }
 
-    //впомогательный клас являются ли друзьями
     public boolean areFriends(Long userId1, Long userId2) {
-        User user1 = userStorage.findUserById(userId1);
-        User user2 = userStorage.findUserById(userId2);
-        return (user1.getUserFriends() != null && user1.getUserFriends().contains(userId2) &&
-                user2.getUserFriends() != null && user2.getUserFriends().contains(userId1));
+        Optional<Friendship> friendship = friendshipStorage.findByUsers(userId1, userId2);
+        return friendship.isPresent() &&
+                friendship.get().getStatus() == Friendship.FriendshipStatus.CONFIRMED;
     }
 
-    //Получить входящие заявки
     public List<Friendship> getIncomingRequests(Long userId) {
-        userStorage.findUserById(userId); // проверяем существование
+        userStorage.findUserById(userId);
         return friendshipStorage.findPendingRequests(userId);
     }
 
-    //Получить исходящие заявки
+    /**
+     * Получить исходящие заявки (которые я отправил)
+     */
     public List<Friendship> getOutgoingRequests(Long userId) {
-        userStorage.findUserById(userId); // проверяем существование
+        userStorage.findUserById(userId);
         return friendshipStorage.findSentRequests(userId);
     }
 
-    private void validateUserExist(Long requesterId, Long addresseeId) {
-        userStorage.findUserById(requesterId);
-        userStorage.findUserById(addresseeId);
+    private void validateUserExist(Long userId1, Long userId2) {
+        userStorage.findUserById(userId1);
+        userStorage.findUserById(userId2);
     }
 
-    private void validateNotSameUser(Long requesterId, Long addresseeId) {
-        if (requesterId.equals(addresseeId)) {
-            log.error("Попытка выполнить операцию с самим собой: userId={}", requesterId);
+    private void validateNotSameUser(Long userId1, Long userId2) {
+        if (userId1.equals(userId2)) {
+            log.error("Попытка выполнить операцию с самим собой: userId={}", userId1);
             throw new ConditionsNotMetException("Нельзя выполнить операцию с самим собой");
         }
     }
 
-    private void addFriendToBothUsers(Long userId1, Long userId2) {
-        log.debug("Добавление пользователей {} и {} в друзья друг другу", userId1, userId2);
+    private void addFriendToUser(Long userId, Long friendId) {
+        log.debug("Добавление друга {} пользователю {}", friendId, userId);
 
-        User user1 = userStorage.findUserById(userId1);
-        User user2 = userStorage.findUserById(userId2);
+        User user = userStorage.findUserById(userId);
+        user.getUserFriends().add(friendId);
+        userStorage.saveFriends(user);
 
-        user1.getUserFriends().add(userId2);
-        user2.getUserFriends().add(userId1);
+        log.debug("Пользователь {} добавил {} в друзья", userId, friendId);
+    }
 
-        log.debug("Пользователи {} и {} добавлены в друзья друг другу", userId1, userId2);
+    private void removeFriendFromUser(Long userId, Long friendId) {
+        log.debug("Удаление друга {} у пользователя {}", friendId, userId);
+
+        User user = userStorage.findUserById(userId);
+        user.getUserFriends().remove(friendId);
+        userStorage.saveFriends(user);
+
+        log.debug("Пользователь {} удалил {} из друзей", userId, friendId);
     }
 }

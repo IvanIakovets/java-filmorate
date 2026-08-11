@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
@@ -11,10 +11,15 @@ import java.util.*;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
     private final FriendshipService friendshipService;
+
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage,
+                       FriendshipService friendshipService) {
+        this.userStorage = userStorage;
+        this.friendshipService = friendshipService;
+    }
 
     public User createUser(User user) {
         log.info("Сервис: запрос на создание пользователя с email: {}", user.getEmail());
@@ -50,13 +55,13 @@ public class UserService {
     }
 
     public boolean addFriend(Long userId, Long friendId) {
-        log.info("Друг добавлен в список друзей пользователя");
-        return userStorage.addFriend(userId, friendId);
+        log.info("UserService: добавление друга {} пользователю {}", friendId, userId);
+        friendshipService.sendFriendRequest(userId, friendId);
+        return true;
     }
 
     public boolean deleteFriend(Long userId, Long friendId) {
-        log.info("Друг удален из списка друзей пользователя");
-        userStorage.deleteFriend(userId, friendId);
+        log.info("UserService: удаление друга {} у пользователя {}", friendId, userId);
         friendshipService.removeFriendship(userId, friendId);
         return true;
     }
@@ -92,11 +97,6 @@ public class UserService {
 
         return friendList;
     }
-
-    /*public boolean addFriend(Long userId, Long friendId) {
-        friendshipService.sendFriendRequest(userId, friendId);
-        return true;
-    }*/
 
     public boolean confirmFriend(Long friendshipId, Long userId) {
         friendshipService.confirmFriendship(friendshipId, userId);

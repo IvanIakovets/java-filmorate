@@ -1,63 +1,32 @@
 package ru.yandex.practicum.filmorate.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
-import ru.yandex.practicum.filmorate.exeptions.IllegalArgumentException;
+import lombok.Getter;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 
+@Getter
 @AllArgsConstructor
 public enum Genre {
-    COMEDY("Комедия"),
-    DRAMA("Драма"),
-    SCIENCE_FICTION("Фантастика"),
-    FANTASY("Фэнтези"),
-    THRILLER("Триллер"),
-    HORROR("Ужасы"),
-    ROMANCE("Мелодрама"),
-    ADVENTURE("Приключения"),
-    ANIMATION("Мультфильм"),
-    DOCUMENTARY("Документальный");
+    COMEDY(1, "Комедия"),
+    DRAMA(2, "Драма"),
+    ANIMATION(3, "Мультфильм"),
+    THRILLER(4, "Триллер"),
+    DOCUMENTARY(5, "Документальный"),
+    ACTION(6, "Боевик");
 
-    private final String displayName;
 
-    @JsonValue
-    public String getDisplayName() {
-        return displayName;
-    }
+    private final int id;
+    private final String name;
 
-    @JsonCreator
-    public static Genre fromString(String value) {
-        if (value == null) {
+    public static Genre fromId(Integer id) {
+        if (id == null) {
             return null;
         }
-
-        String trimmed = value.trim();
-
         for (Genre genre : Genre.values()) {
-            if (genre.displayName.equalsIgnoreCase(trimmed)) {
+            if (genre.id == id) {
                 return genre;
             }
         }
-
-        try {
-            return Genre.valueOf(trimmed.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Указан неверный жанр: '" + value +
-                    "'. Поддерживаемые жанры: " + getAvailableGenres());
-        }
-    }
-
-    private static String getAvailableGenres() {
-        StringBuilder sb = new StringBuilder();
-        for (Genre genre : Genre.values()) {
-            sb.append("\n  - ").append(genre.displayName)
-                    .append(" (").append(genre.name()).append(")");
-        }
-        return sb.toString();
-    }
-
-    @Override
-    public String toString() {
-        return displayName;
+        throw new NotFoundException("Жанр с ID " + id + " не найден");
     }
 }

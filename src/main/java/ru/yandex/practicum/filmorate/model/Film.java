@@ -3,13 +3,13 @@ package ru.yandex.practicum.filmorate.model;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
-import ru.yandex.practicum.filmorate.validations.ValidGenre;
-import ru.yandex.practicum.filmorate.validations.ValidMpaRating;
 import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -33,13 +33,9 @@ public class Film {
             groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Long duration;
 
-    @NotNull(groups = ValidationGroups.Create.class)
-    @ValidGenre(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
-    private Genre genre;
-
-    @NotNull(groups = {ValidationGroups.Create.class})
-    @ValidMpaRating(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private MpaRating mpaRating;
+
+    private List<Genre> genres = new ArrayList<>();
 
     private Set<Long> filmUserLikes = new HashSet<>();
 }
