@@ -66,7 +66,7 @@ public class UserDbStorage implements UserStorage {
     }
 
     @Override
-    public boolean deleteUser(Long userId) {
+    public void deleteUser(Long userId) {
         log.info("UserDbStorage: удаление пользователя {}", userId);
 
         findUserById(userId);
@@ -80,7 +80,6 @@ public class UserDbStorage implements UserStorage {
         }
 
         log.info("Пользователь {} успешно удален", userId);
-        return true;
     }
 
     @Transactional
@@ -162,7 +161,7 @@ public class UserDbStorage implements UserStorage {
     // ==================== МЕТОДЫ ДЛЯ РАБОТЫ С ДРУЗЬЯМИ ====================
 
     @Override
-    public boolean addFriend(Long userId, Long friendId) {
+    public void addFriend(Long userId, Long friendId) {
         log.info("UserDbStorage: добавление друга {} пользователю {}", friendId, userId);
 
         // Проверяем, что пользователи существуют
@@ -172,7 +171,6 @@ public class UserDbStorage implements UserStorage {
         // Проверяем, не пытаемся ли добавить себя
         if (userId.equals(friendId)) {
             log.warn("Попытка добавить себя в друзья");
-            return false;
         }
 
         String sql = "INSERT INTO user_friends (user_id, friend_id) VALUES (?, ?)";
@@ -180,15 +178,13 @@ public class UserDbStorage implements UserStorage {
         try {
             jdbcTemplate.update(sql, userId, friendId);
             log.info("Друг {} добавлен пользователю {}", friendId, userId);
-            return true;
         } catch (DuplicateKeyException e) {
             log.warn("Связь уже существует: user={}, friend={}", userId, friendId);
-            return false;
         }
     }
 
     @Override
-    public boolean deleteFriend(Long userId, Long friendId) {
+    public void deleteFriend(Long userId, Long friendId) {
         log.info("UserDbStorage: удаление друга {} у пользователя {}", friendId, userId);
 
         String sql = "DELETE FROM user_friends WHERE user_id = ? AND friend_id = ?";
@@ -196,10 +192,8 @@ public class UserDbStorage implements UserStorage {
 
         if (rows > 0) {
             log.info("Друг {} удален у пользователя {}", friendId, userId);
-            return true;
         } else {
             log.warn("Связь не найдена: user={}, friend={}", userId, friendId);
-            return false;
         }
     }
 

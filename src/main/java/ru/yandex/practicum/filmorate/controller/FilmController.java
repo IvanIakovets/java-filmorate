@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 public class FilmController {
     private final FilmService filmService;
 
-    //публикация фильма
+    // публикация фильма
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public FilmResponse createFilm(@Validated(ValidationGroups.Create.class) @RequestBody FilmRequest request) {
@@ -35,6 +35,7 @@ public class FilmController {
         return filmService.convertToResponse(createdFilm);
     }
 
+    // удаление фильма по Id
     @DeleteMapping("/{id}")
     public void deleteFilmById(@PathVariable("id") Long filmId) {
         log.info("Запрос на удаление фильма: {}", filmId);
@@ -55,7 +56,7 @@ public class FilmController {
         return filmService.convertToResponse(updatedFilm);
     }
 
-    //получение списка всех фильмов.
+    //получение списка всех фильмов
     @GetMapping
     public Collection<FilmResponse> findAllFilms() { // ← было Collection<Film>
         Collection<Film> films = filmService.getAllFilms();
@@ -64,6 +65,7 @@ public class FilmController {
                 .collect(Collectors.toList());
     }
 
+    // найти фильм по Id
     @GetMapping("/{id}")
     public FilmResponse findFilmById(@PathVariable("id") Long filmId) {
         log.info("Запрос на получение фильма по ID: {}", filmId);
@@ -71,18 +73,21 @@ public class FilmController {
         return filmService.convertToResponse(film);
     }
 
+    // поставить лайк к фильму
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable("id") Long filmId, @PathVariable Long userId) {
         log.info("Запрос на добавление лайка от пользователя {} к фильму {}", userId, filmId);
         filmService.addLike(userId, filmId);
     }
 
+    // удалить лайк к фильму
     @DeleteMapping("/{id}/like/{userId}")
     public void deleteLike(@PathVariable("id") Long filmId, @PathVariable Long userId) {
         log.info("Запрос на удаление лайка от пользователя {} у фильма {}", userId, filmId);
         filmService.deleteLike(userId, filmId);
     }
 
+    // получить популярные фильмы
     @GetMapping("/popular")
     public Collection<FilmResponse> getPopularFilms(
             @Positive(message = "Количество фильмов должно быть положительным числом")

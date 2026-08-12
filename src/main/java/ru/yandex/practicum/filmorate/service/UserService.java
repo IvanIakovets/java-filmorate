@@ -34,9 +34,9 @@ public class UserService {
         return createdUser;
     }
 
-    public boolean deleteUser(Long userId) {
+    public void deleteUser(Long userId) {
         log.info("Сервис: запрос на удаление пользователя с id: {}", userId);
-        return userStorage.deleteUser(userId);
+        userStorage.deleteUser(userId);
     }
 
     public User updateUser(User user) {
@@ -54,16 +54,14 @@ public class UserService {
         return userStorage.findUserById(userId);
     }
 
-    public boolean addFriend(Long userId, Long friendId) {
+    public void addFriend(Long userId, Long friendId) {
         log.info("UserService: добавление друга {} пользователю {}", friendId, userId);
         friendshipService.sendFriendRequest(userId, friendId);
-        return true;
     }
 
-    public boolean deleteFriend(Long userId, Long friendId) {
+    public void deleteFriend(Long userId, Long friendId) {
         log.info("UserService: удаление друга {} у пользователя {}", friendId, userId);
         friendshipService.removeFriendship(userId, friendId);
-        return true;
     }
 
     public Collection<User> getFriendsList(Long userId) {
@@ -98,9 +96,8 @@ public class UserService {
         return friendList;
     }
 
-    public boolean confirmFriend(Long friendshipId, Long userId) {
+    public void confirmFriend(Long friendshipId, Long userId) {
         friendshipService.confirmFriendship(friendshipId, userId);
-        return true;
     }
 
     public void declineFriend(Long friendshipId, Long userId) {

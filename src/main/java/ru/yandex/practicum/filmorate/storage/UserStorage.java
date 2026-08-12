@@ -9,7 +9,7 @@ public interface UserStorage {
 
     User createUser(User user);
 
-    boolean deleteUser(Long userId);
+    void deleteUser(Long userId);
 
     User updateUser(User user);
 
@@ -17,9 +17,9 @@ public interface UserStorage {
 
     User findUserById(Long userId);
 
-    boolean addFriend(Long userId, Long friendId);
+    void addFriend(Long userId, Long friendId);
 
-    boolean deleteFriend(Long userId, Long friendId);
+    void deleteFriend(Long userId, Long friendId);
 
     default void saveFriends(User user) {
     }

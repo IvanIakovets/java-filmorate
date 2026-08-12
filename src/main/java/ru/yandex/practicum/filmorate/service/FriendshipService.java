@@ -27,7 +27,7 @@ public class FriendshipService {
     }
 
     @Transactional
-    public Friendship sendFriendRequest(Long requesterId, Long addresseeId) {
+    public void sendFriendRequest(Long requesterId, Long addresseeId) {
         log.info("Отправка заявки в друзья: от {} к {}", requesterId, addresseeId);
 
         validateUserExist(requesterId, addresseeId);
@@ -53,7 +53,7 @@ public class FriendshipService {
                 // Если встречная заявка — автоподтверждение
                 if (friendship.getRequesterId().equals(addresseeId)) {
                     log.info("Обнаружена встречная заявка, выполняем автоподтверждение");
-                    return confirmFriendship(friendship.getId(), addresseeId);
+                    confirmFriendship(friendship.getId(), addresseeId);
                 }
             }
         }
@@ -70,8 +70,6 @@ public class FriendshipService {
 
         // ОТПРАВИТЕЛЬ СРАЗУ ДОБАВЛЯЕТ АДРЕСАТА В СВОЙ СПИСК ДРУЗЕЙ
         addFriendToUser(requesterId, addresseeId);
-
-        return created;
     }
 
     @Transactional

@@ -26,10 +26,9 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public boolean deleteFilm(Long filmId) {
+    public void deleteFilm(Long filmId) {
         if (films.containsKey(filmId)) {
             films.remove(filmId);
-            return true;
         } else {
             log.error("Фильм не найден. id: {}", filmId);
             throw new NotFoundException("Фильм с данным ID: " + filmId + " не найден");
@@ -96,6 +95,58 @@ public class InMemoryFilmStorage implements FilmStorage {
             throw new NotFoundException("Фильм с ID " + filmId + " не найден");
         }
         return films.get(filmId);
+    }
+
+    @Override
+    public void addLike(Long filmId, Long userId) {
+        log.info("InMemoryFilmStorage: добавление лайка фильму {} от пользователя {}", filmId, userId);
+
+        // Проверяем существование фильма
+        Film film = films.get(filmId);
+        if (film == null) {
+            log.error("Фильм с id {} не найден", filmId);
+            throw new NotFoundException("Фильм с ID " + filmId + " не найден");
+        }
+
+        // Инициализируем множество лайков, если null
+        if (film.getFilmUserLikes() == null) {
+            film.setFilmUserLikes(new HashSet<>());
+        }
+
+        // Проверяем, не поставил ли пользователь уже лайк
+        if (film.getFilmUserLikes().contains(userId)) {
+            log.warn("Пользователь {} уже поставил лайк фильму {}", userId, filmId);
+            throw new DuplicateDataException("Пользователь уже поставил лайк этому фильму");
+        }
+
+        // Добавляем лайк
+        film.getFilmUserLikes().add(userId);
+
+        log.info("Лайк успешно добавлен. Всего лайков у фильма: {}", film.getFilmUserLikes().size());
+    }
+
+    // НОВЫЙ МЕТОД: Удаление лайка у фильма
+    @Override
+    public void deleteLike(Long filmId, Long userId) {
+        log.info("InMemoryFilmStorage: удаление лайка у фильма {} от пользователя {}", filmId, userId);
+
+        // Проверяем существование фильма
+        Film film = films.get(filmId);
+        if (film == null) {
+            log.error("Фильм с id {} не найден", filmId);
+            throw new NotFoundException("Фильм с ID " + filmId + " не найден");
+        }
+
+        // Проверяем наличие лайков
+        if (film.getFilmUserLikes() == null || !film.getFilmUserLikes().contains(userId)) {
+            log.warn("Лайк от пользователя {} к фильму {} не найден", userId, filmId);
+            throw new NotFoundException("Лайк не найден");
+        }
+
+        // Удаляем лайк
+        film.getFilmUserLikes().remove(userId);
+
+        log.info("Лайк успешно удален. Осталось лайков у фильма: {}", film.getFilmUserLikes().size());
     }
 
     @Override

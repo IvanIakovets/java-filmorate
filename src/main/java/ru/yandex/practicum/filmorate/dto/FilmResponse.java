@@ -20,7 +20,7 @@ public class FilmResponse {
     private Long duration;
 
     @JsonProperty("mpa")
-    private MpaResponse mpa;  // ← ТОЛЬКО ОДИН РАЗ!
+    private MpaResponse mpa;
 
     private List<GenreResponse> genres;
 

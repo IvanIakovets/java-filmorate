@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.dao.mappers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.sql.ResultSet;
@@ -23,7 +24,7 @@ public class GenreRowMapper implements RowMapper<Genre> {
             return genre;
         } catch (IllegalArgumentException e) {
             log.error("Неизвестный жанр с id {}: {}", id, name);
-            throw new RuntimeException("Жанр с id " + id + " не найден", e);
+            throw new NotFoundException("Жанр с id " + id + " не найден");
         }
     }
 }

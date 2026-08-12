@@ -23,6 +23,7 @@ public class MpaController {
         this.mpaService = mpaService;
     }
 
+    // получить все рейтинги МПА
     @GetMapping
     public Collection<MpaResponse> getAllMpa() {
         log.info("Запрос на получение всех рейтингов MPA");
@@ -31,6 +32,7 @@ public class MpaController {
                 .collect(Collectors.toList());
     }
 
+    // получить МПА рейтинг по Id
     @GetMapping("/{id}")
     public MpaResponse getMpaById(@PathVariable Integer id) {
         log.info("Запрос на получение рейтинга MPA по id {}", id);

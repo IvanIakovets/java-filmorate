@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 public class GenreController {
     private final GenreService genreService;
 
+    // получть все жанры
     @GetMapping
     public List<GenreResponse> getAllGenres() {
         log.info("Запрос на получение всех жанров");
@@ -28,6 +29,7 @@ public class GenreController {
                 .collect(Collectors.toList());
     }
 
+    // полученье жанра по Id
     @GetMapping("/{id}")
     public GenreResponse getGenreById(@PathVariable Integer id) {
         log.info("Запрос на получение жанра по id {}", id);

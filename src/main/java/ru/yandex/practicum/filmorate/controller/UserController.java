@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 public class UserController {
     private final UserService userService;
 
+    // получить всех пользователей
     @GetMapping
     public Collection<UserResponse> findAllUsers() {
         log.info("Получен запрос на отправку списка всех пользователей. Всего пользователей {}", userService.findAllUsers().size());
@@ -29,48 +30,56 @@ public class UserController {
                 .collect(Collectors.toList());
     }
 
+    // найти пользователя по Id
     @GetMapping("/{id}")
     public User findUserById(@PathVariable("id") Long userId) {
         log.info("Запрос на получение пользователя по ID: {}", userId);
         return userService.findUserById(userId);
     }
 
+    // добавить пользователя
     @PostMapping
     public User createUser(@Validated(ValidationGroups.Create.class) @RequestBody User user) {
         log.info("Запрос на добавление пользователя.");
         return userService.createUser(user);
     }
 
+    // изменить пользователя
     @PutMapping
     public User modifyUser(@Validated(ValidationGroups.Update.class) @RequestBody User user) {
         log.info("Запрос на изменение пользователя.");
         return userService.updateUser(user);
     }
 
+    // удалить пользователя
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable("id") Long userId) {
         log.info("Запрос на удаление пользователя.");
         userService.deleteUser(userId);
     }
 
+    // отпавить запрос дружбы (добавить в свой список)
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable("id") Long userId, @PathVariable Long friendId) {
         log.info("Запрос на добавление друга.");
         userService.addFriend(userId, friendId);
     }
 
+    // удалить друга
     @DeleteMapping("/{id}/friends/{friendId}")
     public void deleteFriend(@PathVariable("id") Long userId, @PathVariable Long friendId) {
         log.info("Запрос на удаление друга.");
         userService.deleteFriend(userId, friendId);
     }
 
+    // получить друзей пользователя
     @GetMapping("/{id}/friends")
     public Collection<User> getFriendsList(@PathVariable("id") Long userId) {
         log.info("Запрос на получение списка друзей пользователя {}", userId);
         return userService.getFriendsList(userId);
     }
 
+    //получение общих друзей
     @GetMapping("/{id}/friends/common/{otherId}")
     public Collection<User> getCommonFriendsList(@PathVariable("id") Long userId, @PathVariable Long otherId) {
         log.info("Запрос на получение списка общих друзей пользователя {} с пользователем {}", userId, otherId);
