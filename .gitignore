@@ -1,7 +1,15 @@
 *.class
+*.DS_Store
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.a
 *.log
 *.jar
 *.war
+.par
 *.nar
 *.ear
 *.zip
@@ -14,6 +22,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Build directories
+bin/
+dist/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -24,10 +36,20 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
-*.iws
+.idea/
 *.iml
-*.ipr
+.vscode/
+.settings/
+.metadata/
+
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp
+*.swo
+*~
 
 ### NetBeans ###
 /nbproject/private/
@@ -40,7 +62,6 @@ build/
 !**/src/test/**/build/
 
 ### VS Code ###
-.vscode/
 
 *.db
 db/*

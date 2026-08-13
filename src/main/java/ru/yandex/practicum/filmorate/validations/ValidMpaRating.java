@@ -7,10 +7,10 @@ import java.lang.annotation.*;
 
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ReleaseDateValidator.class)
+@Constraint(validatedBy = MpaRatingValidator.class)
 @Documented
-public @interface ValidReleaseDate {
-    String message() default "Дата релиза не может быть раньше 28 декабря 1895 года";
+public @interface ValidMpaRating {
+    String message() default "Указан неверный рейтинг MPA";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

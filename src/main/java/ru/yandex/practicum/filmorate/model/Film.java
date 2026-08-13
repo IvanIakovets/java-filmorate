@@ -7,7 +7,9 @@ import ru.yandex.practicum.filmorate.validations.ValidReleaseDate;
 import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -30,6 +32,10 @@ public class Film {
     @Positive(message = "Продолжительность фильма должна быть положительным числом",
             groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private Long duration;
+
+    private MpaRating mpaRating;
+
+    private List<Genre> genres = new ArrayList<>();
 
     private Set<Long> filmUserLikes = new HashSet<>();
 }

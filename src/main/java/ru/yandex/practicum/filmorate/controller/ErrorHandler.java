@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -9,9 +11,10 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.yandex.practicum.filmorate.exeptions.ConditionsNotMetException;
-import ru.yandex.practicum.filmorate.exeptions.DuplicateDataException;
-import ru.yandex.practicum.filmorate.exeptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.ConditionsNotMetException;
+import ru.yandex.practicum.filmorate.exceptions.DuplicateDataException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.InvalidParameterException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -33,7 +36,6 @@ public class ErrorHandler {
                         (existing, replacement) -> existing
                 ));
 
-
         return ErrorResponse.builder()
                 .message("Ошибка валидации данных")
                 .errorCode("VALIDATION_ERROR")
@@ -43,9 +45,26 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleConstraintViolation(ConstraintViolationException ex) {
+        log.error("Ошибка валидации (ConstraintViolation): {}", ex.getMessage());
+
+        String message = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", "));
+
+        return ErrorResponse.builder()
+                .message(message)
+                .errorCode("VALIDATION_ERROR")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler(ConditionsNotMetException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleBadRequest(Exception ex) {
+    public ErrorResponse handleBadRequest(ConditionsNotMetException ex) {  // ← Уточнил тип
         log.error("Ошибка запроса: {}", ex.getMessage());
         return ErrorResponse.builder()
                 .message(ex.getMessage())
@@ -103,12 +122,24 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler(InvalidParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleIllegalArgumentException(InvalidParameterException ex) {
+        log.error("Некорректный аргумент: {}", ex.getMessage());
+        return ErrorResponse.builder()
+                .message(ex.getMessage())  // ← Конкретное сообщение!
+                .errorCode("BAD_REQUEST")
+                .status(HttpStatus.BAD_REQUEST.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGeneralException(Exception ex) {
         log.error("Непредвиденная ошибка: ", ex);
         return ErrorResponse.builder()
-                .message("Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.") // ← Скрываем детали
+                .message("Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.")
                 .errorCode("INTERNAL_SERVER_ERROR")
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
                 .timestamp(LocalDateTime.now())
