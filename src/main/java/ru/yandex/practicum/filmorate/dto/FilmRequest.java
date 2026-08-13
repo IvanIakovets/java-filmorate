@@ -17,6 +17,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class FilmRequest {
+    @NotNull(groups = ValidationGroups.Update.class)
     private Long id; // Для обновления
 
     @NotBlank(groups = ValidationGroups.Create.class)

@@ -19,6 +19,7 @@ import ru.yandex.practicum.filmorate.storage.UserStorage;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -136,8 +137,6 @@ public class UserDbStorage implements UserStorage {
         String sql = "SELECT * FROM users";
         List<User> users = jdbcTemplate.query(sql, userRowMapper);
 
-        users.forEach(this::loadFriends);
-
         log.info("Найдено {} пользователей", users.size());
         return users;
     }
@@ -226,9 +225,13 @@ public class UserDbStorage implements UserStorage {
         // Вставляем новые связи
         if (user.getUserFriends() != null && !user.getUserFriends().isEmpty()) {
             String insertSql = "INSERT INTO user_friends (user_id, friend_id) VALUES (?, ?)";
-            for (Long friendId : user.getUserFriends()) {
-                jdbcTemplate.update(insertSql, user.getId(), friendId);
-            }
+
+            List<Object[]> batchArgs = user.getUserFriends().stream()
+                    .map(friendId -> new Object[]{user.getId(), friendId})
+                    .collect(Collectors.toList());
+
+            jdbcTemplate.batchUpdate(insertSql, batchArgs);
+
             log.debug("Сохранено {} друзей для пользователя {}", user.getUserFriends().size(), user.getId());
         }
     }

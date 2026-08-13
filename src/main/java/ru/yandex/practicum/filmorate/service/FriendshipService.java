@@ -72,7 +72,6 @@ public class FriendshipService {
         addFriendToUser(requesterId, addresseeId);
     }
 
-    @Transactional
     public Friendship confirmFriendship(Long friendshipId, Long userId) {
         log.debug("Подтверждение заявки: friendshipId={}, userId={}", friendshipId, userId);
 
@@ -188,20 +187,12 @@ public class FriendshipService {
         log.info("Пользователь {} удалил {} из друзей", userId, friendId);
     }
 
-    public boolean areFriends(Long userId1, Long userId2) {
-        Optional<Friendship> friendship = friendshipStorage.findByUsers(userId1, userId2);
-        return friendship.isPresent() &&
-                friendship.get().getStatus() == Friendship.FriendshipStatus.CONFIRMED;
-    }
-
     public List<Friendship> getIncomingRequests(Long userId) {
         userStorage.findUserById(userId);
         return friendshipStorage.findPendingRequests(userId);
     }
 
-    /**
-     * Получить исходящие заявки (которые я отправил)
-     */
+    // Получить исходящие заявки (которые я отправил)
     public List<Friendship> getOutgoingRequests(Long userId) {
         userStorage.findUserById(userId);
         return friendshipStorage.findSentRequests(userId);

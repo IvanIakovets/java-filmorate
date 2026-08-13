@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.validations.ValidationGroups;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -25,28 +24,26 @@ public class UserController {
     @GetMapping
     public Collection<UserResponse> findAllUsers() {
         log.info("Получен запрос на отправку списка всех пользователей. Всего пользователей {}", userService.findAllUsers().size());
-        return userService.findAllUsers().stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        return userService.findAllUsers();
     }
 
     // найти пользователя по Id
     @GetMapping("/{id}")
-    public User findUserById(@PathVariable("id") Long userId) {
+    public UserResponse findUserById(@PathVariable("id") Long userId) {
         log.info("Запрос на получение пользователя по ID: {}", userId);
         return userService.findUserById(userId);
     }
 
     // добавить пользователя
     @PostMapping
-    public User createUser(@Validated(ValidationGroups.Create.class) @RequestBody User user) {
+    public UserResponse createUser(@Validated(ValidationGroups.Create.class) @RequestBody User user) {
         log.info("Запрос на добавление пользователя.");
         return userService.createUser(user);
     }
 
     // изменить пользователя
     @PutMapping
-    public User modifyUser(@Validated(ValidationGroups.Update.class) @RequestBody User user) {
+    public UserResponse modifyUser(@Validated(ValidationGroups.Update.class) @RequestBody User user) {
         log.info("Запрос на изменение пользователя.");
         return userService.updateUser(user);
     }
@@ -74,14 +71,14 @@ public class UserController {
 
     // получить друзей пользователя
     @GetMapping("/{id}/friends")
-    public Collection<User> getFriendsList(@PathVariable("id") Long userId) {
+    public Collection<UserResponse> getFriendsList(@PathVariable("id") Long userId) {
         log.info("Запрос на получение списка друзей пользователя {}", userId);
         return userService.getFriendsList(userId);
     }
 
     //получение общих друзей
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Collection<User> getCommonFriendsList(@PathVariable("id") Long userId, @PathVariable Long otherId) {
+    public Collection<UserResponse> getCommonFriendsList(@PathVariable("id") Long userId, @PathVariable Long otherId) {
         log.info("Запрос на получение списка общих друзей пользователя {} с пользователем {}", userId, otherId);
         return userService.getCommonFriends(userId,otherId);
     }
@@ -124,18 +121,5 @@ public class UserController {
         userService.cancelFriendRequest(friendshipId, userId);
     }
 
-    private UserResponse convertToResponse(User user) {
-        if (user == null) {
-            return null;
-        }
 
-        return UserResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .login(user.getLogin())
-                .name(user.getName())
-                .birthday(user.getBirthday())
-                .friends(user.getUserFriends())
-                .build();
-    }
 }

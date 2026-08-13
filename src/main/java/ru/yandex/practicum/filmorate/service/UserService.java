@@ -3,11 +3,13 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dto.UserResponse;
 import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -21,7 +23,7 @@ public class UserService {
         this.friendshipService = friendshipService;
     }
 
-    public User createUser(User user) {
+    public UserResponse createUser(User user) {
         log.info("Сервис: запрос на создание пользователя с email: {}", user.getEmail());
 
         if (user.getName() == null || user.getName().isBlank()) {
@@ -31,7 +33,7 @@ public class UserService {
 
         User createdUser = userStorage.createUser(user);
         log.info("Сервис: пользователь создан с id: {}", createdUser.getId());
-        return createdUser;
+        return convertToResponse(createdUser);
     }
 
     public void deleteUser(Long userId) {
@@ -39,19 +41,23 @@ public class UserService {
         userStorage.deleteUser(userId);
     }
 
-    public User updateUser(User user) {
+    public UserResponse updateUser(User user) {
         log.info("Сервис: запрос на изменение данных пользователя с id: {}", user.getId());
-        return userStorage.updateUser(user);
+        User updatedUser = userStorage.updateUser(user);
+        return convertToResponse(updatedUser);
     }
 
-    public Collection<User> findAllUsers() {
+    public Collection<UserResponse> findAllUsers() {
         log.info("Сервис: запрос на получение списка пользователей.");
-        return userStorage.findAllUsers();
+        return userStorage.findAllUsers().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 
-    public User findUserById(Long userId) {
+    public UserResponse findUserById(Long userId) {
         log.info("Сервис: запрос на получение данных пользователя списка по id: {}", userId);
-        return userStorage.findUserById(userId);
+        User user = userStorage.findUserById(userId);
+        return convertToResponse(user);
     }
 
     public void addFriend(Long userId, Long friendId) {
@@ -64,33 +70,35 @@ public class UserService {
         friendshipService.removeFriendship(userId, friendId);
     }
 
-    public Collection<User> getFriendsList(Long userId) {
+    public Collection<UserResponse> getFriendsList(Long userId) {
         User user = userStorage.findUserById(userId);
         if (user.getUserFriends() == null || user.getUserFriends().isEmpty()) {
             log.info("Вернулся пустой список друзей пользователя.");
             return new HashSet<>();
         }
         log.info("Вернулся список друзей пользователя.");
-        Set<User> friendList = new HashSet<>();
+        Set<UserResponse> friendList = new HashSet<>();
         for (Long id : user.getUserFriends()) {
-            friendList.add(userStorage.findUserById(id));
+            User userFriend = userStorage.findUserById(id);
+            friendList.add(convertToResponse(userFriend));
         }
         return friendList;
     }
 
-    public Collection<User> getCommonFriends(Long userId, Long otherId) {
+    public Collection<UserResponse> getCommonFriends(Long userId, Long otherId) {
         User user = userStorage.findUserById(userId);
         User otherUser = userStorage.findUserById(otherId);
 
         Set<Long> userFriends = user.getUserFriends();
         Set<Long> otherUserFriends = otherUser.getUserFriends();
 
-        Set<User> friendList = new HashSet<>();
+        Set<UserResponse> friendList = new HashSet<>();
         Set<Long> commonFriends = new HashSet<>(userFriends);
         commonFriends.retainAll(otherUserFriends);
 
         for (Long regId : commonFriends) {
-            friendList.add(userStorage.findUserById(regId));
+            User userFriend = userStorage.findUserById(regId);
+            friendList.add(convertToResponse(userFriend));
         }
 
         return friendList;
@@ -114,5 +122,20 @@ public class UserService {
 
     public List<Friendship> getOutgoingRequests(Long userId) {
         return friendshipService.getOutgoingRequests(userId);
+    }
+
+    private UserResponse convertToResponse(User user) {
+        if (user == null) {
+            return null;
+        }
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .login(user.getLogin())
+                .name(user.getName())
+                .birthday(user.getBirthday())
+                .friends(user.getUserFriends())
+                .build();
     }
 }

@@ -178,19 +178,21 @@ public class FilmService {
     }
 
     @Transactional
-    public Film addFilm(Film film) {
-        log.info("Сервис: создание фильма {}", film.getName());
-        return filmStorage.addFilm(film);
+    public FilmResponse addFilm(FilmRequest request) {
+        log.info("Сервис: создание фильма {}", request.getName());
+
+        Film film = convertToFilmForCreate(request);
+        Film createdFilm = filmStorage.addFilm(film);
+
+        log.info("Сервис: фильм создан с ID: {}", createdFilm.getId());
+        return convertToResponse(createdFilm);
     }
 
     @Transactional
-    public Film updateFilm(Film film) {
-        log.info("Сервис: обновление фильма {}", film.getName());
+    public FilmResponse updateFilm(FilmRequest request) {
+        log.info("Сервис: обновление фильма {}", request.getName());
 
-        if (film.getId() == null) {
-            throw new ConditionsNotMetException("ID фильма обязателен для обновления");
-        }
-
+        Film film = convertToFilmForUpdate(request);
         filmStorage.getFilmById(film.getId());
 
         // Проверяем жанры, если они переданы
@@ -211,7 +213,8 @@ public class FilmService {
             }
         }
 
-        return filmStorage.updateFilm(film);
+        Film updatedFilm = filmStorage.updateFilm(film);
+        return convertToResponse(updatedFilm);
     }
 
     public void deleteFilm(Long filmId) {
@@ -219,14 +222,18 @@ public class FilmService {
         filmStorage.deleteFilm(filmId);
     }
 
-    public Film getFilmById(Long filmId) {
+    public FilmResponse getFilmById(Long filmId) {
         log.info("Сервис: получение фильма по ID {}", filmId);
-        return filmStorage.getFilmById(filmId);
+        Film film = filmStorage.getFilmById(filmId);
+        return convertToResponse(film);
     }
 
-    public Collection<Film> getAllFilms() {
+    public Collection<FilmResponse> getAllFilms() {
         log.info("Сервис: получение всех фильмов");
-        return filmStorage.getAllFilms();
+        Collection<Film> allFilms = filmStorage.getAllFilms();
+        return allFilms.stream()
+                .map(film -> convertToResponse(film))
+                .collect(Collectors.toList());
     }
 
     public void addLike(Long userId, Long filmId) {
@@ -247,7 +254,7 @@ public class FilmService {
         log.info("Лайк удален пользователем {} к фильму {}", userId, filmId);
     }
 
-    public Collection<Film> getPopularFilms(int count) {
+    public Collection<FilmResponse> getPopularFilms(int count) {
         log.info("FilmService: получение {} популярных фильмов", count);
 
         // Проверяем, что count положительный
@@ -256,6 +263,10 @@ public class FilmService {
             return new HashSet<>();
         }
 
-        return filmStorage.getPopularFilms(count);
+        Collection<Film> films = filmStorage.getPopularFilms(count);
+
+        return films.stream()
+                .map(film -> convertToResponse(film))
+                .collect(Collectors.toList());
     }
 }

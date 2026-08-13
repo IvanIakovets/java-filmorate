@@ -11,6 +11,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dao.mappers.FilmRowMapper;
+import ru.yandex.practicum.filmorate.dao.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.exceptions.DuplicateDataException;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -30,10 +31,12 @@ import java.util.stream.Collectors;
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
     private final FilmRowMapper filmRowMapper;
+    public final GenreRowMapper genreRowMapper;
 
-    public FilmDbStorage(JdbcTemplate jdbcTemplate, FilmRowMapper filmRowMapper) {
+    public FilmDbStorage(JdbcTemplate jdbcTemplate, FilmRowMapper filmRowMapper, GenreRowMapper genreRowMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.filmRowMapper = filmRowMapper;
+        this.genreRowMapper = genreRowMapper;
     }
 
     @Transactional
@@ -76,7 +79,7 @@ public class FilmDbStorage implements FilmStorage {
         } else {
             film.setGenres(new ArrayList<>());
         }
-        return getFilmById(filmId);
+        return film;
     }
 
     @Override
@@ -132,30 +135,20 @@ public class FilmDbStorage implements FilmStorage {
         log.info("Фильм с id {} обновлен", film.getId());
 
         // Возвращаем обновленный фильм
-        return getFilmById(film.getId());
+        return film;
     }
 
     @Override
     public Collection<Film> getAllFilms() {
         log.info("FilmDbStorage: получение всех фильмов");
 
-        String sql = "SELECT f.*, " +
-                "mr.id as mpa_id, mr.name as mpa_name, " +
-                "COALESCE(" +
-                "(SELECT '[' || STRING_AGG(" +
-                "'{\"id\":' || CAST(g.id AS VARCHAR) || ',\"name\":\"' || g.name || '\"}', " +
-                "',' ORDER BY g.id" +
-                ") || ']' " +
-                "FROM film_genre fg " +
-                "JOIN genres g ON fg.genre_id = g.id " +
-                "WHERE fg.film_id = f.id), " +
-                "'[]'" +
-                ") AS genres " +
+        String sql = "SELECT f.*, mr.id as mpa_id, mr.name as mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
                 "ORDER BY f.id";
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper);
+        loadGenresForFilms(films);
 
         log.info("Найдено {} фильмов", films.size());
         return films;
@@ -165,26 +158,17 @@ public class FilmDbStorage implements FilmStorage {
     public Film getFilmById(Long filmId) {
         log.info("FilmDbStorage: получение фильма по id {}", filmId);
 
-        String sql = "SELECT f.*, " +
-                "mr.id as mpa_id, mr.name as mpa_name, " +
-                "COALESCE(" +
-                "(SELECT '[' || STRING_AGG(" +
-                "'{\"id\":' || CAST(g.id AS VARCHAR) || ',\"name\":\"' || g.name || '\"}', " +
-                "',' ORDER BY g.id" +
-                ") || ']' " +
-                "FROM film_genre fg " +
-                "JOIN genres g ON fg.genre_id = g.id " +
-                "WHERE fg.film_id = f.id), " +
-                "'[]'" +
-                ") AS genres " +
+        String sql = "SELECT f.*, mr.id as mpa_id, mr.name as mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
-                "WHERE f.id = ? " +
-                "ORDER BY f.id";
+                "WHERE f.id = ?";
 
         try {
-            return jdbcTemplate.queryForObject(sql, filmRowMapper, filmId);
-        } catch (NotFoundException | EmptyResultDataAccessException e) {
+            Film film = jdbcTemplate.queryForObject(sql, filmRowMapper, filmId);
+
+            loadGenresForFilms(List.of(film));
+            return film;
+        } catch (EmptyResultDataAccessException e) {
             log.error("Фильм с id {} не найден", filmId);
             throw new NotFoundException("Фильм с ID " + filmId + " не найден");
         }
@@ -194,18 +178,7 @@ public class FilmDbStorage implements FilmStorage {
     public Collection<Film> getPopularFilms(int count) {
         log.info("FilmDbStorage: получение {} популярных фильмов", count);
 
-        String sql = "SELECT f.*, " +
-                "mr.id as mpa_id, mr.name as mpa_name, " +
-                "COALESCE(" +
-                "(SELECT '[' || STRING_AGG(" +
-                "'{\"id\":' || CAST(g.id AS VARCHAR) || ',\"name\":\"' || g.name || '\"}', " +
-                "',' ORDER BY g.id" +
-                ") || ']' " +
-                "FROM film_genre fg " +
-                "JOIN genres g ON fg.genre_id = g.id " +
-                "WHERE fg.film_id = f.id), " +
-                "'[]'" +
-                ") AS genres " +
+        String sql = "SELECT f.*, mr.id as mpa_id, mr.name as mpa_name " +
                 "FROM films f " +
                 "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
                 "INNER JOIN ( " +
@@ -217,7 +190,9 @@ public class FilmDbStorage implements FilmStorage {
                 "LIMIT ?";
 
         try {
-            return jdbcTemplate.query(sql, filmRowMapper, count);
+            List<Film> films = jdbcTemplate.query(sql, filmRowMapper, count);
+            loadGenresForFilms(films);
+            return films;
         } catch (Exception e) {
             log.error("Ошибка при получении популярных фильмов", e);
             return new ArrayList<>();
@@ -274,5 +249,41 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         log.info("Лайк успешно удален");
+    }
+
+    private void loadGenresForFilms(List<Film> films) {
+        if (films == null || films.isEmpty()) {
+            return;
+        }
+
+        // Получаем ID всех фильмов
+        String filmIds = films.stream()
+                .map(Film::getId)
+                .map(String::valueOf)
+                .collect(Collectors.joining(","));
+
+        // Один запрос для получения жанров всех фильмов
+        String genresSql = "SELECT fg.film_id, g.id, g.name " +
+                "FROM film_genre fg " +
+                "JOIN genres g ON fg.genre_id = g.id " +
+                "WHERE fg.film_id IN (" + filmIds + ") " +
+                "ORDER BY fg.film_id, g.id";
+
+        // Группируем жанры по film_id
+        Map<Long, List<Genre>> filmGenresMap = jdbcTemplate.query(genresSql, rs -> {
+            Map<Long, List<Genre>> map = new HashMap<>();
+            while (rs.next()) {
+                Long filmId = rs.getLong("film_id");
+                Genre genre = genreRowMapper.mapRow(rs, 0);
+                map.computeIfAbsent(filmId, k -> new ArrayList<>()).add(genre);
+            }
+            return map;
+        });
+
+        // Устанавливаем жанры для каждого фильма
+        films.forEach(film -> {
+            List<Genre> genres = filmGenresMap.getOrDefault(film.getId(), new ArrayList<>());
+            film.setGenres(genres);
+        });
     }
 }
